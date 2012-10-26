@@ -26,9 +26,7 @@ import org.apache.hadoop.mapred.{JobConf, OutputCollector, RecordReader}
 
 
 trait AvroFileScheme extends Source {
-  //override these as needed:
   val schema : Schema 
-  // TODO Cascading doesn't support local mode yet
   override def hdfsScheme = new AvroScheme(schema)
               .asInstanceOf[Scheme[JobConf,RecordReader[_,_],OutputCollector[_,_],_,_]]
 }
