@@ -27,11 +27,12 @@ import org.apache.hadoop.mapred.{JobConf, OutputCollector, RecordReader}
 
 trait AvroFileScheme extends Source {
   val schema : Schema 
-  override def hdfsScheme = new AvroScheme(schema)
+  val unpack : Boolean 
+  override def hdfsScheme = new AvroScheme(schema, unpack)
               .asInstanceOf[Scheme[JobConf,RecordReader[_,_],OutputCollector[_,_],_,_]]
 }
 
-case class AvroSource(p : String, override val schema : Schema) 
+case class AvroSource(p : String, override val schema : Schema)(implicit override val unpack : Boolean = true)
 extends FixedPathSource(p) 
 with AvroFileScheme
 

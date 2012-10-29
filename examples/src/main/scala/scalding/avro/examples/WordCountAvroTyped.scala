@@ -18,25 +18,39 @@
  import com.twitter.scalding._
  import scalding.avro.AvroSource
  import org.apache.avro.Schema
+ import org.apache.avro.generic.GenericData.Record
  import org.apache.hadoop.util.ToolRunner
  import org.apache.hadoop.conf.Configuration
 
+ import edu.berkeley.cs.avro.marker._
+ import edu.berkeley.cs.avro.runtime._
 
- object WordCountAvroJob {
+
+
+ object WordCountAvroTypedJob {
   def main(args: Array[String]) {
     ToolRunner.run(new Configuration, new Tool, args);
   }
 }
 
-class WordCountAvroJob(args : Args) extends Job(args) {
+case class WordCount(var token: String, var count: Long) extends AvroRecord
 
-  val jsonSchema = io.Source.fromURL(getClass.getResource("/wc.avsc")).mkString
-  println(jsonSchema)
 
-  TextLine( args("input") )
-  .flatMap('line -> 'token) { line : String => tokenize(line) }
-  .groupBy('token) { _.size('count) }
-  .write( AvroSource( args("output"), new Schema.Parser().parse(jsonSchema) ) )
+class WordCountAvroTypedJob(args : Args) extends Job(args) {
+
+
+
+  val text = TextLine( args("input") )
+  val typedText : TypedPipe[String] = TypedPipe.from(text)
+  val records = typedText
+  .flatMap{ line : String => tokenize(line) }
+  .map{ token : String => (token, 1L)}
+  .group[String, Long]
+  .sum
+  .map{ case(token, count) => WordCount(token, count)
+  }
+  
+  records.write( ('record), AvroSource( args("output"), schemaOf[WordCount])(false))
 
   // Split a piece of text into individual words.
   def tokenize(text : String) : Array[String] = {
