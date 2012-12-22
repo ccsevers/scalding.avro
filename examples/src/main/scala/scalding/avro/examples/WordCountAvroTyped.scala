@@ -40,15 +40,14 @@ class WordCountAvroTypedJob(args : Args) extends Job(args) {
 
 
 
-  val text = TextLine( args("input") )
-  val typedText : TypedPipe[String] = TypedPipe.from(text)
+  // val text = TextLine( args("input") )
+  val typedText : TypedPipe[String] = TypedPipe.from(TextLine( args("input") ))
   val records = typedText
   .flatMap{ line : String => tokenize(line) }
   .map{ token : String => (token, 1L)}
   .group[String, Long]
   .sum
-  .map{ case(token, count) => WordCount(token, count)
-  }
+  .map{ case(token, count) => WordCount(token, count) }
   
   records.write( ('record), AvroSource( args("output"), schemaOf[WordCount])(false))
 

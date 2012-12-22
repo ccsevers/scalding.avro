@@ -15,7 +15,7 @@
 
 package scalding.avro
 
-import com.twitter.scalding.{Source, FixedPathSource}
+import com.twitter.scalding.{Source, FixedPathSource, HadoopSchemeInstance}
 import org.apache.avro.Schema
 import cascading.avro.AvroScheme
 import cascading.scheme.Scheme
@@ -28,11 +28,10 @@ import org.apache.hadoop.mapred.{JobConf, OutputCollector, RecordReader}
 trait AvroFileScheme extends Source {
   val schema : Schema 
   val unpack : Boolean 
-  override def hdfsScheme = new AvroScheme(schema, unpack)
-              .asInstanceOf[Scheme[JobConf,RecordReader[_,_],OutputCollector[_,_],_,_]]
+  override def hdfsScheme = HadoopSchemeInstance(new AvroScheme(schema, unpack))
 }
 
-case class AvroSource(p : String, override val schema : Schema)(implicit override val unpack : Boolean = true)
+case class AvroSource(p: String, override val schema: Schema, override val unpack: Boolean = true)
 extends FixedPathSource(p) 
 with AvroFileScheme
 
