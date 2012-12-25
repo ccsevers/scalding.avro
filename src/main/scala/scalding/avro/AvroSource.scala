@@ -15,23 +15,47 @@
 
 package scalding.avro
 
-import com.twitter.scalding.{Source, FixedPathSource, HadoopSchemeInstance}
+import cascading.avro.{PackedAvroScheme, AvroScheme}
+import com.twitter.scalding._
 import org.apache.avro.Schema
-import cascading.avro.AvroScheme
-import cascading.scheme.Scheme
-import org.apache.hadoop.mapred.{JobConf, OutputCollector, RecordReader}
+import org.apache.avro.specific.SpecificRecord
 
 
+trait UnpackedAvroFileScheme extends Source {
+  val schema: Option[Schema]
 
-
-
-trait AvroFileScheme extends Source {
-  val schema : Schema 
-  val unpack : Boolean 
-  override def hdfsScheme = HadoopSchemeInstance(new AvroScheme(schema, unpack))
+  override def hdfsScheme = HadoopSchemeInstance(new AvroScheme(schema.getOrElse(null)))
 }
 
-case class AvroSource(p: String, override val schema: Schema, override val unpack: Boolean = true)
-extends FixedPathSource(p) 
-with AvroFileScheme
+trait PackedAvroFileScheme[AvroType <: SpecificRecord] extends Source {
+  val schema = implicitly[Manifest[AvroType]].erasure.newInstance.asInstanceOf[SpecificRecord].getSchema
+
+  override def hdfsScheme = HadoopSchemeInstance(new PackedAvroScheme[AvroType](schema))
+}
+
+object TypedUnpackedAvroSource {
+  def apply[TupleType : Manifest : TupleConverter](path: String, schema: Option[Schema] = None) =
+    new TypedUnpackedAvroSource[TupleType](Seq(path), schema)
+}
+
+case class TypedUnpackedAvroSource[TupleType : Manifest : TupleConverter](paths: Seq[String], override val schema: Option[Schema] = None)
+                                             (override val converter: TupleConverter[TupleType])
+  extends FixedPathSource(paths: _*)
+  with UnpackedAvroFileScheme with Mappable[TupleType]
+
+object UnpackedAvroSource {
+  def apply(path: String, schema: Option[Schema] = None) = new UnpackedAvroSource(Seq(path), schema)
+}
+
+case class UnpackedAvroSource(p: Seq[String], override val schema: Option[Schema] = None)
+  extends FixedPathSource(p: _*) with UnpackedAvroFileScheme
+
+object PackedAvroSource {
+  def apply[AvroType <: SpecificRecord](path: String) = new PackedAvroSource[AvroType](Seq(path))
+}
+
+case class PackedAvroSource[AvroType <: SpecificRecord](paths: Seq[String])
+  extends FixedPathSource(paths: _*) with PackedAvroFileScheme[AvroType]
+
+
 

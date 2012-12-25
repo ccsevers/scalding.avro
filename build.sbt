@@ -12,7 +12,7 @@ resolvers += "Maven Central Repo" at "http://repo1.maven.org/maven2"
 
 libraryDependencies += "com.twitter" % "scalding_2.9.2" % "0.8.1"
 
-libraryDependencies += "cascading.avro" % "avro-scheme" % "2.1.0"
+libraryDependencies += "cascading.avro" % "avro-scheme" % "2.2-SNAPSHOT"
 
 
 
