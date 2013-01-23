@@ -16,7 +16,7 @@
  package scalding.avro.examples
 
  import com.twitter.scalding._
- import scalding.avro.AvroSource
+ import scalding.avro.PackedAvroSource
  import org.apache.avro.Schema
  import org.apache.avro.generic.GenericData.Record
  import org.apache.hadoop.util.ToolRunner
@@ -49,7 +49,7 @@ class WordCountAvroTypedJob(args : Args) extends Job(args) {
   .sum
   .map{ case(token, count) => WordCount(token, count) }
   
-  records.write( ('record), AvroSource( args("output"), schemaOf[WordCount])(false))
+  records.write(PackedAvroSource[WordCount]( args("output")))
 
   // Split a piece of text into individual words.
   def tokenize(text : String) : Array[String] = {

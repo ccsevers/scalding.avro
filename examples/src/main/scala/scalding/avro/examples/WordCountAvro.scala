@@ -16,7 +16,7 @@
  package scalding.avro.examples
 
  import com.twitter.scalding._
- import scalding.avro.AvroSource
+ import scalding.avro.TypedUnpackedAvroSource
  import org.apache.avro.Schema
  import org.apache.hadoop.util.ToolRunner
  import org.apache.hadoop.conf.Configuration
@@ -36,7 +36,7 @@ class WordCountAvroJob(args : Args) extends Job(args) {
   TextLine( args("input") )
   .flatMap('line -> 'token) { line : String => tokenize(line) }
   .groupBy('token) { _.size('count) }
-  .write( AvroSource( args("output"), new Schema.Parser().parse(jsonSchema) ) )
+  .write( TypedUnpackedAvroSource[(String,Long)]( args("output"), Some(new Schema.Parser().parse(jsonSchema) ) ))
 
   // Split a piece of text into individual words.
   def tokenize(text : String) : Array[String] = {
