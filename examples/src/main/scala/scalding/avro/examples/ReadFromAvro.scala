@@ -27,37 +27,24 @@
 
 
 
- object WordCountAvroTypedJob {
+ object ReadFromAvroJob {
   def main(args: Array[String]) {
     ToolRunner.run(new Configuration, new Tool, args);
   }
 }
 
-case class WordCount(var token: String, var count: Long) extends AvroRecord
+
+
+class ReadFromAvroJob(args : Args) extends Job(args) {
 
 
 
 
-
-class WordCountAvroTypedJob(args : Args) extends Job(args) {
-
-
-
-
-  // val text = TextLine( args("input") )
-  val typedText : TypedPipe[String] = TypedPipe.from(TextLine( args("input") ))
-  val records = typedText
-  .flatMap{ line : String => tokenize(line) }
-  .map{ token : String => (token, 1L)}
-  .group[String, Long]
-  .sum
-  .map{ case(token, count) => WordCount(token, count) }
+  val typedAvros  = TypedPipe.from[WordCount](PackedAvroSource[WordCount]( args("input") ))
+  val records = typedAvros
+  .map{ rec : WordCount => (rec.token, rec.count) }
+ 
   
-  records.write(PackedAvroSource[WordCount]( args("output")))
+  records.write(Tsv( args("output")))
 
-  // Split a piece of text into individual words.
-  def tokenize(text : String) : Array[String] = {
-    // Lowercase each word and remove punctuation.
-    text.toLowerCase.replaceAll("[^a-zA-Z0-9\\s]", "").split("\\s+")
-  }
 }

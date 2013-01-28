@@ -31,7 +31,6 @@
 class WordCountAvroJob(args : Args) extends Job(args) {
 
   val jsonSchema = io.Source.fromURL(getClass.getResource("/wc.avsc")).mkString
-  println(jsonSchema)
 
   TextLine( args("input") )
   .flatMap('line -> 'token) { line : String => tokenize(line) }
