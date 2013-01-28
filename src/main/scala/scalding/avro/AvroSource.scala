@@ -45,7 +45,7 @@ object TypedUnpackedAvroSource {
   }
 
 class TypedUnpackedAvro[TupleType](paths: Seq[String], override val schema: Option[Schema])
-                                                                   (implicit val mf : Manifest[TupleType], override val converter: TupleConverter[TupleType]) 
+                                  (implicit val mf : Manifest[TupleType], override val converter: TupleConverter[TupleType]) 
   extends FixedPathSource(paths: _*)
   with UnpackedAvroFileScheme with Mappable[TupleType]
   {
@@ -70,14 +70,16 @@ case class UnpackedAvroSource(p: Seq[String], override val schema: Option[Schema
   extends FixedPathSource(p: _*) with UnpackedAvroFileScheme
 
 object PackedAvroSource {
-  def apply[AvroType <: SpecificRecord](path: String)(implicit mf : Manifest[AvroType]) 
+  def apply[AvroType <: SpecificRecord : Manifest : TupleConverter](path: String)
     = new PackedAvroSource[AvroType](Seq(path))
+  def apply[AvroType <: SpecificRecord : Manifest : TupleConverter](paths: Seq[String])
+    = new PackedAvroSource[AvroType](paths)
 }
 
-class PackedAvroSource[AvroType <: SpecificRecord](paths: Seq[String])(implicit mf : Manifest[AvroType])
-  extends FixedPathSource(paths: _*) with PackedAvroFileScheme[AvroType] {
+class PackedAvroSource[AvroType <: SpecificRecord](paths: Seq[String])(implicit mf : Manifest[AvroType], override val converter: TupleConverter[AvroType])
+  extends FixedPathSource(paths: _*) with PackedAvroFileScheme[AvroType] with Mappable[AvroType] {
     override val schema = mf.erasure.newInstance.asInstanceOf[SpecificRecord].getSchema
-  }
+  } 
 
 
 
