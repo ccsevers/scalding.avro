@@ -13,14 +13,14 @@
  *  limitations under the License.
  */
 
-package scalding.avro
+ package scalding.avro
 
-import cascading.avro.{PackedAvroScheme, AvroScheme}
-import cascading.flow.FlowDef
-import cascading.tuple.Fields
-import com.twitter.scalding._
-import org.apache.avro.Schema
-import org.apache.avro.specific.SpecificRecord
+ import cascading.avro.{PackedAvroScheme, AvroScheme}
+ import cascading.flow.FlowDef
+ import cascading.tuple.Fields
+ import com.twitter.scalding._
+ import org.apache.avro.Schema
+ import org.apache.avro.specific.SpecificRecord
 
 
 
@@ -38,28 +38,14 @@ trait PackedAvroFileScheme[AvroType <: SpecificRecord] extends Source {
 
 object TypedUnpackedAvroSource {
   def apply[TupleType : Manifest : TupleConverter](path: String, schema: Option[Schema]) = 
-    new TypedUnpackedAvro[TupleType](Seq(path), schema)  
-  
-  def apply[TupleType : Manifest : TupleConverter](paths: Seq[String], schema: Option[Schema] = None) = 
-    new TypedUnpackedAvro[TupleType](paths, schema)  
-  }
+  new TypedUnpackedAvroSource[TupleType](Seq(path), schema)  
+}
 
-class TypedUnpackedAvro[TupleType](paths: Seq[String], override val schema: Option[Schema])
-                                  (implicit val mf : Manifest[TupleType], override val converter: TupleConverter[TupleType]) 
-  extends FixedPathSource(paths: _*)
-  with UnpackedAvroFileScheme with Mappable[TupleType]
-  {
-    // For Mappable:
-  override def mapTo[U](out : Fields)(fun : (TupleType) => U)
-    (implicit flowDef : FlowDef, mode : Mode, setter : TupleSetter[U]) = {
-    RichPipe(read(flowDef, mode)).mapTo[TupleType,U](sourceFields -> out)(fun)(converter, setter)
-  }
-  // For Mappable:
-  override def flatMapTo[U](out : Fields)(fun : (TupleType) => Iterable[U])
-    (implicit flowDef : FlowDef, mode : Mode, setter : TupleSetter[U]) = {
-    RichPipe(read(flowDef, mode)).flatMapTo[TupleType,U](sourceFields -> out)(fun)(converter, setter)
-  }
-  }
+case class TypedUnpackedAvroSource[TupleType](paths: Seq[String], override val schema: Option[Schema])
+(implicit val mf : Manifest[TupleType], override val converter: TupleConverter[TupleType]) 
+extends FixedPathSource(paths: _*)
+with UnpackedAvroFileScheme with Mappable[TupleType]
+
 
 
 object UnpackedAvroSource {
@@ -67,19 +53,19 @@ object UnpackedAvroSource {
 }
 
 case class UnpackedAvroSource(p: Seq[String], override val schema: Option[Schema] = None)
-  extends FixedPathSource(p: _*) with UnpackedAvroFileScheme
+extends FixedPathSource(p: _*) with UnpackedAvroFileScheme
 
 object PackedAvroSource {
   def apply[AvroType <: SpecificRecord : Manifest : TupleConverter](path: String)
-    = new PackedAvroSource[AvroType](Seq(path))
+  = new PackedAvroSource[AvroType](Seq(path))
   def apply[AvroType <: SpecificRecord : Manifest : TupleConverter](paths: Seq[String])
-    = new PackedAvroSource[AvroType](paths)
+  = new PackedAvroSource[AvroType](paths)
 }
 
 class PackedAvroSource[AvroType <: SpecificRecord](paths: Seq[String])(implicit mf : Manifest[AvroType], override val converter: TupleConverter[AvroType])
-  extends FixedPathSource(paths: _*) with PackedAvroFileScheme[AvroType] with Mappable[AvroType] {
-    override val schema = mf.erasure.newInstance.asInstanceOf[SpecificRecord].getSchema
-  } 
+extends FixedPathSource(paths: _*) with PackedAvroFileScheme[AvroType] with Mappable[AvroType] {
+  override val schema = mf.erasure.newInstance.asInstanceOf[SpecificRecord].getSchema
+} 
 
 
 
