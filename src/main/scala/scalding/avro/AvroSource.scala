@@ -30,7 +30,7 @@ trait UnpackedAvroFileScheme extends Source {
   override def hdfsScheme = HadoopSchemeInstance(new AvroScheme(schema.getOrElse(null)))
 }
 
-trait PackedAvroFileScheme[AvroType <: SpecificRecord] extends Source {
+trait PackedAvroFileScheme[AvroType] extends Source {
   val schema : Schema
 
   override def hdfsScheme = HadoopSchemeInstance(new PackedAvroScheme[AvroType](schema))
@@ -56,16 +56,20 @@ case class UnpackedAvroSource(p: Seq[String], override val schema: Option[Schema
 extends FixedPathSource(p: _*) with UnpackedAvroFileScheme
 
 object PackedAvroSource {
-  def apply[AvroType <: SpecificRecord : Manifest : TupleConverter](path: String)
+  def apply[AvroType : AvroSchemaType : Manifest : TupleConverter](path: String)
   = new PackedAvroSource[AvroType](Seq(path))
-  def apply[AvroType <: SpecificRecord : Manifest : TupleConverter](paths: Seq[String])
+  def apply[AvroType : AvroSchemaType : Manifest : TupleConverter](paths: Seq[String])
   = new PackedAvroSource[AvroType](paths)
 }
 
-class PackedAvroSource[AvroType <: SpecificRecord](paths: Seq[String])(implicit mf : Manifest[AvroType], override val converter: TupleConverter[AvroType])
+class PackedAvroSource[AvroType : Manifest: AvroSchemaType : TupleConverter](paths: Seq[String])
 extends FixedPathSource(paths: _*) with PackedAvroFileScheme[AvroType] with Mappable[AvroType] {
-  override val schema = mf.erasure.newInstance.asInstanceOf[SpecificRecord].getSchema
+   val schemaType = implicitly[AvroSchemaType[AvroType]]
+   override val schema = schemaType.schema
+   override val converter = implicitly[TupleConverter[AvroType]]
 } 
+
+
 
 
 
