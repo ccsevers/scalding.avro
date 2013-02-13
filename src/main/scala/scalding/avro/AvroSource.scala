@@ -30,7 +30,7 @@ trait UnpackedAvroFileScheme extends Source {
   override def hdfsScheme = HadoopSchemeInstance(new AvroScheme(schema.getOrElse(null)))
 }
 
-trait PackedAvroFileScheme[AvroType] extends Source {
+trait PackedAvroFileScheme[AvroType] extends Mappable[AvroType] {
   val schema : Schema
 
   override def hdfsScheme = HadoopSchemeInstance(new PackedAvroScheme[AvroType](schema))
@@ -63,7 +63,7 @@ object PackedAvroSource {
 }
 
 class PackedAvroSource[AvroType : Manifest: AvroSchemaType : TupleConverter](paths: Seq[String])
-extends FixedPathSource(paths: _*) with PackedAvroFileScheme[AvroType] with Mappable[AvroType] {
+extends FixedPathSource(paths: _*) with PackedAvroFileScheme[AvroType]  {
    val schemaType = implicitly[AvroSchemaType[AvroType]]
    override val schema = schemaType.schema
    override val converter = implicitly[TupleConverter[AvroType]]
