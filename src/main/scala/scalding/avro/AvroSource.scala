@@ -62,7 +62,7 @@ object PackedAvroSource {
   = new PackedAvroSource[AvroType](paths)
 }
 
-class PackedAvroSource[AvroType : Manifest: AvroSchemaType : TupleConverter](paths: Seq[String])
+case class PackedAvroSource[AvroType : Manifest: AvroSchemaType : TupleConverter](paths: Seq[String])
 extends FixedPathSource(paths: _*) with PackedAvroFileScheme[AvroType]  {
    val schemaType = implicitly[AvroSchemaType[AvroType]]
    override val schema = schemaType.schema
